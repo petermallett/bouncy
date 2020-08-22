@@ -7,7 +7,7 @@
             "command": "/usr/bin/g++",
             "args": [
                 "-g",
-                "./src/bouncy.cpp",
+                "${workspaceFolder}/src/*.cpp",
                 "-o",
                 "./bouncy",
                 "-lcurl",

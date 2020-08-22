@@ -2,46 +2,7 @@
 
 #include "plat.h"
 
-#include "plat.cpp"
-#include "server.cpp"
-
 #define BOUNCY_DEBUG 1
-
-#define MAX_EVENTS 3
-#define POLL_INTERVAL 3000
-
-void run_server(int epoll_fd)
-{
-    bool running = true;
-    int event_count = 0;
-    epoll_event events[MAX_EVENTS];
-
-    sockaddr_in client_addr;
-    socklen_t addrlen;
-    int client_fd;
-
-    while(running)
-    {
-        event_count = epoll_wait(epoll_fd, events, MAX_EVENTS, POLL_INTERVAL);
-        fprintf(stderr, "%d events in %3.2fs\n", event_count, POLL_INTERVAL/1000.0);
-        for (int i = 0; i < event_count; ++i)
-        {
-            addrlen = sizeof(client_addr);
-            client_fd = accept(events[i].data.fd, (struct sockaddr *)&client_addr, &addrlen);
-            if(client_fd < 0)
-            {
-                perror("accept() error");
-                running = false;
-            }
-            else
-            {
-                handle_request(client_fd);
-            }
-        }
-
-        // do other work here
-    }
-}
 
 enum JSON_state {
     JSON_STRING,
@@ -112,3 +73,42 @@ int main(int argc, char **argv)
 
     return 0;
 }
+
+#if 0
+
+#define MAX_EVENTS 3
+#define POLL_INTERVAL 3000
+
+void run_server(int epoll_fd)
+{
+    bool running = true;
+    int event_count = 0;
+    epoll_event events[MAX_EVENTS];
+
+    sockaddr_in client_addr;
+    socklen_t addrlen;
+    int client_fd;
+
+    while(running)
+    {
+        event_count = epoll_wait(epoll_fd, events, MAX_EVENTS, POLL_INTERVAL);
+        fprintf(stderr, "%d events in %3.2fs\n", event_count, POLL_INTERVAL/1000.0);
+        for (int i = 0; i < event_count; ++i)
+        {
+            addrlen = sizeof(client_addr);
+            client_fd = accept(events[i].data.fd, (struct sockaddr *)&client_addr, &addrlen);
+            if(client_fd < 0)
+            {
+                perror("accept() error");
+                running = false;
+            }
+            else
+            {
+                handle_request(client_fd);
+            }
+        }
+
+        // do other work here
+    }
+}
+#endif
