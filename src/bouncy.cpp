@@ -1,48 +1,20 @@
 #include <stdio.h>
 
-#include "plat.h"
-
 #define BOUNCY_DEBUG 1
 
-enum JSON_state {
-    JSON_STRING,
-    JSON_NUMBER,
-    JSON_NULL,
-    JSON_TRUE,
-    JSON_FALSE,
-    JSON_OBJECT,
-    JSON_ARRAY,
-    JSON_EOF,
+#include "json.h"
+#include "plat.h"
 
-    JSON_ANY,
-};
-struct parse_result {
-    char message[255];
-    char error[255];
-    int status;
-};
-parse_result
-parseJSON(text_file_buf *buf_info)
+struct main_config
 {
-    parse_result result = {};
-    JSON_state state = JSON_ANY;
-    char c;
-
-    if(buf_info->fileInfo->size == 0)
-    {
-        c = EOF;
-        result.status = -1;
-        strcpy(result.message, "Error: Parse error on line 1:");
-        // sprintf(result.error, "Expected one of: %s, got %s",
-        //         parseJSON_expecting(JSON_ANY), parseJSON_saw(JSON_EOF));
-    }
-
-    return result;
-}
+    size_t maxReadSize;
+};
 
 int main(int argc, char **argv)
 {
     proc_info proc_info = platGetProcInfo(argv[0]);
+    // main_config config = {MB(4)};
+    main_config config = {1};
 
     // printf("cwd: %s\n", proc_info.cwd);
     // printf("procName: %s\n", proc_info.procName);
@@ -50,12 +22,17 @@ int main(int argc, char **argv)
     {
         char test_json_path[PATH_MAX];
         strcpy(test_json_path, proc_info.cwd);
-        strcat(test_json_path, "/test.json");
+        strcat(test_json_path, "/config.json");
         text_file test_json = platBeginTextFileRead(test_json_path);
-        if (test_json.size < MB(4))
+        if (test_json.size < config.maxReadSize)
         {
-            text_file_buf test_json_buf = platReadEntireTextFile(&test_json);
-            platFreeFileBuf(&test_json_buf);
+            text_file_buf config_buf = platReadEntireTextFile(&test_json);
+            json_parse_result jsonParseResult = jsonParse(config_buf.data, config_buf.textLen);
+            platFreeFileBuf(&config_buf);
+        }
+        else
+        {
+            fprintf(stdout, "config.json is larger than maxReadSize(%lu)", config.maxReadSize);
         }
         platEndTextFileRead(&test_json);
     }

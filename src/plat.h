@@ -3,15 +3,20 @@
 #include <assert.h>
 #include <linux/limits.h>
 
-#define KB(x) ((size_t) (x) << 10)
-#define MB(x) ((size_t) (x) << 20)
+#define u32 __U32_TYPE
+#define u64 __U64_TYPE
 
-struct proc_info {
+#define KB(x) ((size_t)(x) << 10)
+#define MB(x) ((size_t)(x) << 20)
+
+struct proc_info
+{
     char cwd[PATH_MAX];
     char procName[NAME_MAX];
 };
 
-struct text_file {
+struct text_file
+{
     char path[PATH_MAX];
     char name[NAME_MAX];
     size_t size;
@@ -23,8 +28,10 @@ struct text_file {
     }
 };
 
-struct text_file_buf {
+struct text_file_buf
+{
     text_file *fileInfo;
+    u32 textLen;
     char *data;
 
     ~text_file_buf(void)
@@ -52,7 +59,7 @@ platGetProcInfo(char *argv0)
 inline bool
 platFileExists(const char *filePath)
 {
-    return(access(filePath, F_OK) != -1);
+    return (access(filePath, F_OK) != -1);
 }
 
 inline text_file
@@ -77,6 +84,11 @@ platBeginTextFileRead(const char *filePath)
     }
     else
     {
+#if BOUNCY_DEBUG
+        char message[255 + PATH_MAX];
+        sprintf(message, "cound not stat file: %s", filePath);
+        perror(message);
+#endif
         result.size = 0;
     }
 
@@ -86,7 +98,7 @@ platBeginTextFileRead(const char *filePath)
 inline void
 platEndTextFileRead(text_file *fileInfo)
 {
-    if(fileInfo->fp)
+    if (fileInfo->fp)
     {
         fclose(fileInfo->fp);
         fileInfo->fp = 0;
@@ -99,7 +111,12 @@ platReadEntireTextFile(text_file *fileInfo)
     text_file_buf result = {};
     result.fileInfo = fileInfo;
 
-    result.data = (char *)malloc(fileInfo->size);
+    result.data = (char *)malloc(fileInfo->size + 1);
+    fread(result.data, 1, fileInfo->size, fileInfo->fp);
+
+    // Size includes null terminator.
+    result.textLen = fileInfo->size + 1;
+    result.data[result.textLen] = 0;
 
     return result;
 }
